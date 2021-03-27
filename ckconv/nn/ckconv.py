@@ -219,7 +219,7 @@ class CKConv(torch.nn.Module):
         if self.sigma is not None:
             with torch.no_grad():
                 n = int(1 / self.sr_change) * 2 + 1
-                h = n // 2
+                h = max(1, n // 2)
                 G = (
                     lambda x: 1
                     / (self.sigma * sqrt(2 * pi))
@@ -234,7 +234,7 @@ class CKConv(torch.nn.Module):
                     conv_kernel_clone.view(-1, 1, *x_shape[2:]), unsq, padding=0
                 )
                 print('Conv Smoothing size: ', conv_smoothing.size())
-                print('h: ', h)
+                print('h: ', n//2)
                 print('Conv Kernel Ori Size: ', conv_kernel_clone.size())
                 print('Conv Kernel hh size: ', conv_kernel_clone[:, :, h:-h].size())
                 print('Conv Smoothing View size: ', conv_smoothing.view(*conv_kernel_clone.shape[:-1], -1).size())
