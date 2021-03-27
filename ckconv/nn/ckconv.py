@@ -229,9 +229,11 @@ class CKConv(torch.nn.Module):
             smoothing_ker = [G(x) for x in range(-h, h + 1)]
             unsq = torch.Tensor(smoothing_ker).cuda().unsqueeze(0).unsqueeze(0)
             smoothing_ker = unsq
-            conv_kernel[:, :, h:-h] = torch.conv1d(
-                conv_kernel.view(-1, 1, *x_shape[2:]), smoothing_ker, padding=0
-            ).view(*conv_kernel.shape[:-1], -1)
+            conv_kernel_clone = conv_kernel.clone()
+            conv_kernel_clone[:, :, h:-h] = torch.conv1d(
+                conv_kernel_clone.view(-1, 1, *x_shape[2:]), smoothing_ker, padding=0
+            ).view(*conv_kernel_clone.shape[:-1], -1)
+            conv_kernel = conv_kernel_clone
         # multiply by the sr_train / sr_test
         if self.sr_change != 1.0:
             conv_kernel = conv_kernel * self.sr_change
