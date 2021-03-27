@@ -216,7 +216,6 @@ class CKConv(torch.nn.Module):
         # ---- Different samling rate --------
         # If freq test > freq test, smooth out high-freq elements.
         if self.sigma is not None:
-            print('GONE THROUGH AND REEE')
             from math import pi, sqrt, exp
 
             n = int(1 / self.sr_change) * 2 + 1
@@ -228,7 +227,8 @@ class CKConv(torch.nn.Module):
             )
 
             smoothing_ker = [G(x) for x in range(-h, h + 1)]
-            smoothing_ker = torch.Tensor(smoothing_ker).cuda().unsqueeze(0).unsqueeze(0)
+            unsq = torch.Tensor(smoothing_ker).cuda().unsqueeze(0).unsqueeze(0)
+            smoothing_ker = unsq
             conv_kernel[:, :, h:-h] = torch.conv1d(
                 conv_kernel.view(-1, 1, *x_shape[2:]), smoothing_ker, padding=0
             ).view(*conv_kernel.shape[:-1], -1)
