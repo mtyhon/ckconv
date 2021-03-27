@@ -233,7 +233,7 @@ class CKConv(torch.nn.Module):
             ).view(*conv_kernel.shape[:-1], -1)
         # multiply by the sr_train / sr_test
         if self.sr_change != 1.0:
-            conv_kernel *= self.sr_change
+            conv_kernel = conv_kernel * self.sr_change
         # ------------------------------------
 
         # For computation of "weight_decay"
