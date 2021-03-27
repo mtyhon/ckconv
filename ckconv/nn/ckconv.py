@@ -6,6 +6,7 @@ from ckconv.nn.misc import Multiply
 import numpy as np
 import ckconv.nn.functional as ckconv_f
 from torch.nn.utils import weight_norm
+from math import pi, sqrt, exp
 
 
 class KernelNet(torch.nn.Module):
@@ -216,30 +217,28 @@ class CKConv(torch.nn.Module):
         # ---- Different samling rate --------
         # If freq test > freq test, smooth out high-freq elements.
         if self.sigma is not None:
-            from math import pi, sqrt, exp
+            with torch.no_grad():
+                n = int(1 / self.sr_change) * 2 + 1
+                h = n // 2
+                G = (
+                    lambda x: 1
+                    / (self.sigma * sqrt(2 * pi))
+                    * exp(-float(x) ** 2 / (2 * self.sigma ** 2))
+                )
+    
+                smoothing_ker = [G(x) for x in range(-h, h + 1)]
+                unsq = torch.Tensor(smoothing_ker).cuda().unsqueeze(0).unsqueeze(0).clone()
+    #             print('Smoothing Ker Size: ', unsq.size())
+                conv_kernel_clone = conv_kernel.clone()
+                conv_smoothing = torch.conv1d(
+                    conv_kernel_clone.view(-1, 1, *x_shape[2:]), unsq, padding=0
+                )
+    #             print('Conv Smoothing size: ', conv_smoothing.size())
+    #             print('Conv Kernel hh size: ', conv_kernel_clone[:, :, h:-h].size())
+    #             print('Conv Smoothing View size: ', conv_smoothing.view(*conv_kernel_clone.shape[:-1], -1).size())
 
-            n = int(1 / self.sr_change) * 2 + 1
-            h = n // 2
-            G = (
-                lambda x: 1
-                / (self.sigma * sqrt(2 * pi))
-                * exp(-float(x) ** 2 / (2 * self.sigma ** 2))
-            )
-
-            smoothing_ker = [G(x) for x in range(-h, h + 1)]
-            unsq = torch.Tensor(smoothing_ker).cuda().unsqueeze(0).unsqueeze(0).clone()
-            print('Smoothing Ker Size: ', unsq.size())
-            conv_kernel_clone = conv_kernel.clone()
-            conv_smoothing = torch.conv1d(
-                conv_kernel_clone.view(-1, 1, *x_shape[2:]), unsq, padding=0
-            )
-            print('Conv Smoothing size: ', conv_smoothing.size())
-            print('Conv Kernel hh size: ', conv_kernel_clone[:, :, h:-h].size())
-            print('Conv Smoothing View size: ', conv_smoothing.view(*conv_kernel_clone.shape[:-1], -1).size())
-
-
-            conv_kernel_clone[:, :, h:-h] = conv_smoothing.view(*conv_kernel_clone.shape[:-1], -1)
-            conv_kernel = conv_kernel_clone
+                conv_kernel_clone[:, :, h:-h] = conv_smoothing.view(*conv_kernel_clone.shape[:-1], -1)
+                conv_kernel = conv_kernel_clone
         # multiply by the sr_train / sr_test
         if self.sr_change != 1.0:
             conv_kernel = conv_kernel * self.sr_change
