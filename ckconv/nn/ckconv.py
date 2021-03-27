@@ -237,6 +237,8 @@ class CKConv(torch.nn.Module):
             )
             print('Conv Smoothing size: ', conv_smoothing.size())
             print('Conv Kernel hh size: ', conv_kernel_clone[:, :, h:-h].size())
+            print('Conv Smoothing View size: ', conv_smoothing.view(*conv_kernel_clone.shape[:-1], -1).size())
+
 
             conv_kernel_clone[:, :, h:-h] = conv_smoothing.view(*conv_kernel_clone.shape[:-1], -1)
             conv_kernel = conv_kernel_clone
