@@ -291,6 +291,8 @@ class CKConv(torch.nn.Module):
             # if new signal has higher frequency
             if self.sr_change < 1:
                 self.sigma = 0.5
+            else: # don't blur
+                self.sigma = None 
 
         return self.rel_positions
 
